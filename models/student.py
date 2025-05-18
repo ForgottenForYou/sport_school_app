@@ -121,3 +121,177 @@ class Student:
             enrollment_date=datetime.strptime(data.get('enrollment_date'), '%Y-%m-%d').date() if data.get(
                 'enrollment_date') else None
         )
+
+    def filter_students(self, filters=None):
+        """
+        Фильтрация учеников по различным параметрам
+
+        :param filters: словарь с параметрами фильтрации, например:
+            {
+                'birth_year': 2010,  # Год рождения
+                'department_id': 1,  # ID отделения
+                'group_id': 2,       # ID группы
+                'coach_id': 3,       # ID тренера
+                'medical_date_from': '2023-01-01',  # Дата медосмотра от
+                'medical_date_to': '2023-12-31',    # Дата медосмотра до
+                'training_allowed': True,           # Допуск к тренировкам
+                'search_text': 'Иван'               # Поиск по имени/фамилии
+            }
+        :return: список отфильтрованных учеников
+        """
+        if not filters:
+            return self.get_all_students()
+
+        query_parts = ["SELECT s.*, g.name as group_name, d.name as department_name, "
+                       "c.last_name || ' ' || c.first_name as coach_name "
+                       "FROM students s "
+                       "LEFT JOIN groups g ON s.group_id = g.id "
+                       "LEFT JOIN departments d ON g.department_id = d.id "
+                       "LEFT JOIN coaches c ON g.coach_id = c.id "
+                       "WHERE 1=1"]
+        parameters = []
+
+        # Фильтр по году рождения
+        if 'birth_year' in filters and filters['birth_year']:
+            query_parts.append("AND strftime('%Y', s.birth_date) = ?")
+            parameters.append(str(filters['birth_year']))
+
+        # Фильтр по отделению
+        if 'department_id' in filters and filters['department_id']:
+            query_parts.append("AND g.department_id = ?")
+            parameters.append(filters['department_id'])
+
+        # Фильтр по группе
+        if 'group_id' in filters and filters['group_id']:
+            query_parts.append("AND s.group_id = ?")
+            parameters.append(filters['group_id'])
+
+        # Фильтр по тренеру
+        if 'coach_id' in filters and filters['coach_id']:
+            query_parts.append("AND g.coach_id = ?")
+            parameters.append(filters['coach_id'])
+
+        # Фильтр по дате медосмотра (от)
+        if 'medical_date_from' in filters and filters['medical_date_from']:
+            query_parts.append("AND s.medical_exam_date >= ?")
+            parameters.append(filters['medical_date_from'])
+
+        # Фильтр по дате медосмотра (до)
+        if 'medical_date_to' in filters and filters['medical_date_to']:
+            query_parts.append("AND s.medical_exam_date <= ?")
+            parameters.append(filters['medical_date_to'])
+
+        # Фильтр по допуску к тренировкам
+        if 'training_allowed' in filters:
+            if filters['training_allowed']:
+                query_parts.append("AND s.training_allowed = 1")
+            else:
+                query_parts.append("AND s.training_allowed = 0")
+
+        # Поиск по тексту (имя, фамилия)
+        if 'search_text' in filters and filters['search_text']:
+            query_parts.append("AND (s.last_name LIKE ? OR s.first_name LIKE ? OR s.middle_name LIKE ?)")
+            search_term = f"%{filters['search_text']}%"
+            parameters.extend([search_term, search_term, search_term])
+
+        # Составляем финальный запрос
+        query = " ".join(query_parts)
+
+        # Выполняем запрос
+        cursor = self.db_manager.execute_query(query, parameters)
+        if not cursor:
+            return []
+
+        # Преобразуем результаты в список словарей
+        students = []
+        for row in cursor:
+            student = dict(row)
+            students.append(student)
+
+        return students
+
+    def filter_students(self, filters=None):
+        """
+        Фильтрация учеников по различным параметрам
+
+        :param filters: словарь с параметрами фильтрации, например:
+            {
+                'birth_year': 2010,  # Год рождения
+                'department_id': 1,  # ID отделения
+                'group_id': 2,       # ID группы
+                'coach_id': 3,       # ID тренера
+                'medical_date_from': '2023-01-01',  # Дата медосмотра от
+                'medical_date_to': '2023-12-31',    # Дата медосмотра до
+                'training_allowed': True,           # Допуск к тренировкам
+                'search_text': 'Иван'               # Поиск по имени/фамилии
+            }
+        :return: список отфильтрованных учеников
+        """
+        if not filters:
+            return self.get_all_students()
+
+        query_parts = ["SELECT s.*, g.name as group_name, d.name as department_name, "
+                       "c.last_name || ' ' || c.first_name as coach_name "
+                       "FROM students s "
+                       "LEFT JOIN groups g ON s.group_id = g.id "
+                       "LEFT JOIN departments d ON g.department_id = d.id "
+                       "LEFT JOIN coaches c ON g.coach_id = c.id "
+                       "WHERE 1=1"]
+        parameters = []
+
+        # Фильтр по году рождения
+        if 'birth_year' in filters and filters['birth_year']:
+            query_parts.append("AND strftime('%Y', s.birth_date) = ?")
+            parameters.append(str(filters['birth_year']))
+
+        # Фильтр по отделению
+        if 'department_id' in filters and filters['department_id']:
+            query_parts.append("AND g.department_id = ?")
+            parameters.append(filters['department_id'])
+
+        # Фильтр по группе
+        if 'group_id' in filters and filters['group_id']:
+            query_parts.append("AND s.group_id = ?")
+            parameters.append(filters['group_id'])
+
+        # Фильтр по тренеру
+        if 'coach_id' in filters and filters['coach_id']:
+            query_parts.append("AND g.coach_id = ?")
+            parameters.append(filters['coach_id'])
+
+        # Фильтр по дате медосмотра (от)
+        if 'medical_date_from' in filters and filters['medical_date_from']:
+            query_parts.append("AND s.medical_exam_date >= ?")
+            parameters.append(filters['medical_date_from'])
+
+        # Фильтр по дате медосмотра (до)
+        if 'medical_date_to' in filters and filters['medical_date_to']:
+            query_parts.append("AND s.medical_exam_date <= ?")
+            parameters.append(filters['medical_date_to'])
+
+        # Фильтр по допуску к тренировкам
+        if 'training_allowed' in filters and filters['training_allowed'] is not None:
+            query_parts.append("AND s.training_allowed = ?")
+            parameters.append(1 if filters['training_allowed'] else 0)
+
+        # Поиск по тексту (имя, фамилия)
+        if 'search_text' in filters and filters['search_text']:
+            query_parts.append("AND (s.last_name LIKE ? OR s.first_name LIKE ? OR s.middle_name LIKE ?)")
+            search_term = f"%{filters['search_text']}%"
+            parameters.extend([search_term, search_term, search_term])
+
+        # Составляем финальный запрос
+        query = " ".join(query_parts)
+
+        # Выполняем запрос
+        cursor = self.db_manager.execute_query(query, parameters)
+        if not cursor:
+            return []
+
+        # Преобразуем результаты в список словарей
+        students = []
+        for row in cursor:
+            student = dict(row)
+            students.append(student)
+
+        return students
